@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: madajes-boarding-house
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node server/index.cjs
+    envVars:
+      - key: MYSQL_HOST
+        value: ""
+      - key: MYSQL_PORT
+        value: ""
+      - key: MYSQL_DATABASE
+        value: ""
+      - key: MYSQL_USER
+        value: ""
+      - key: MYSQL_PASSWORD
+        value: ""
+      - key: MYSQL_SSL
+        value: "true"
+      - key: MYSQL_REJECT_UNAUTHORIZED
+        value: "false"
+      - key: MYSQL_CA
+        value: ""

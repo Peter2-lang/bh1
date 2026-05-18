@@ -1,0 +1,98 @@
+CREATE DATABASE IF NOT EXISTS madajes_boarding_house
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE madajes_boarding_house;
+
+CREATE TABLE IF NOT EXISTS property_profiles (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(150) NOT NULL,
+  address VARCHAR(255) NOT NULL,
+  map_url TEXT NOT NULL,
+  manager VARCHAR(120) NOT NULL,
+  phone VARCHAR(40) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS rooms (
+  id VARCHAR(80) PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  room_number VARCHAR(40) NOT NULL,
+  type VARCHAR(80) NOT NULL,
+  monthly_rate DECIMAL(10,2) NOT NULL,
+  capacity INT NOT NULL DEFAULT 1,
+  inclusions TEXT,
+  status ENUM('Available', 'Occupied', 'Maintenance') NOT NULL DEFAULT 'Available',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_room_number (room_number)
+);
+
+CREATE TABLE IF NOT EXISTS tenants (
+  id VARCHAR(80) PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  phone VARCHAR(40),
+  room_id VARCHAR(80) NOT NULL,
+  start_date DATE NOT NULL,
+  monthly_rent DECIMAL(10,2) NOT NULL,
+  account_id VARCHAR(80),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_tenants_room FOREIGN KEY (room_id) REFERENCES rooms(id)
+);
+
+CREATE TABLE IF NOT EXISTS accounts (
+  id VARCHAR(80) PRIMARY KEY,
+  role ENUM('admin', 'tenant') NOT NULL,
+  username VARCHAR(80) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  tenant_id VARCHAR(80),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_accounts_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+  id VARCHAR(80) PRIMARY KEY,
+  tenant_id VARCHAR(80) NOT NULL,
+  room_id VARCHAR(80) NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  method ENUM('Cash', 'GCash', 'E-cash') NOT NULL,
+  reference VARCHAR(150),
+  payment_date DATE NOT NULL,
+  status ENUM('Pending', 'Verified') NOT NULL DEFAULT 'Pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_payments_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+  CONSTRAINT fk_payments_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+  INDEX idx_payments_room_date (room_id, payment_date)
+);
+
+CREATE TABLE IF NOT EXISTS tenant_reports (
+  id VARCHAR(80) PRIMARY KEY,
+  tenant_id VARCHAR(80) NOT NULL,
+  category VARCHAR(80) NOT NULL,
+  title VARCHAR(180) NOT NULL,
+  details TEXT NOT NULL,
+  report_date DATE NOT NULL,
+  status ENUM('Open', 'In Progress', 'Resolved') NOT NULL DEFAULT 'Open',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reports_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS schedule_items (
+  id VARCHAR(80) PRIMARY KEY,
+  title VARCHAR(180) NOT NULL,
+  schedule_date DATE NOT NULL,
+  schedule_time TIME NOT NULL,
+  category VARCHAR(80) NOT NULL,
+  details TEXT,
+  visible_to_tenants BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_schedule_date (schedule_date)
+);
